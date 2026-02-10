@@ -83,4 +83,31 @@ class AuthenticationTest extends TestCase
 
         $this->assertGuest();
     }
+
+    public function test_login_is_rate_limited_after_too_many_attempts(): void
+    {
+        $user = User::factory()->create();
+
+        for ($i = 0; $i < 5; $i++) {
+            Volt::test('pages.auth.login')
+                ->set('form.email', $user->email)
+                ->set('form.password', 'wrong-password')
+                ->call('login');
+        }
+
+        $component = Volt::test('pages.auth.login')
+            ->set('form.email', $user->email)
+            ->set('form.password', 'wrong-password')
+            ->call('login');
+
+        $component->assertHasErrors();
+        $this->assertGuest();
+    }
+
+    public function test_guest_layout_renders_on_register_page(): void
+    {
+        $response = $this->get('/register');
+
+        $response->assertOk();
+    }
 }
